@@ -1,5 +1,7 @@
 # imports used for project
 from openai import OpenAI
+from openai.types.chat import ChatCompletion
+
 from configs import ProviderConfigs, OLLAMA_PROVIDER_CONFIGS ,MODEL_RESPONSE_CONFIG
 
 """
@@ -24,7 +26,7 @@ class OpenAIProvider():
         )
 
     # used to contact the model with a specific message in a 1 time thing given 1 prompt
-    def OneShotMessage(self, prompt:dict, model_name:str, response_configs:dict):
+    def OneShotMessage(self, prompt:dict, model_name:str, response_configs:dict) -> str | ChatCompletion:
         if model_name not in self.available_models:
             return "model not available"
         
@@ -84,7 +86,7 @@ class Model():
 
 provider = OpenAIProvider(OLLAMA_PROVIDER_CONFIGS)
 cache = CacheModelContextManager()
-model = Model("qwen3.5:35b-a3b", provider=provider, context_manager=cache, response_configs=MODEL_RESPONSE_CONFIG)
+model = Model("qwen3.5:9b", provider=provider, context_manager=cache, response_configs=MODEL_RESPONSE_CONFIG)
 
 while True:
     response = model.MutliShotMessage(input("enter message here: "))

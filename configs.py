@@ -5,6 +5,9 @@
 #     "reasoning_effort": "none"    
 # }
 
+# DEFINES THE DEVICE BEING USED
+DEVICE = "AIR"
+
 class ProviderConfigs():
     def __init__(self, name:str, base_url:str, api_key:str, model_names:list[str]):
         self.name = name
@@ -17,9 +20,13 @@ class ProviderConfigs():
 """        
 BASE_URL = "http://localhost:11434/v1"
 API_KEY = "ollama"
-MODEL_NAMES = ["qwen3.5:35b-a3b", "qwen3:8b" , "qwen2.5-coder:1.5b-base"]
+MODEL_NAMES_PRO = ["qwen3.5:35b-a3b", "qwen3:8b" , "qwen2.5-coder:1.5b-base"]
+MODEL_NAMES_AIR = ["qwen3.5:9b"]
 
-OLLAMA_PROVIDER_CONFIGS = ProviderConfigs(name = "ollama", base_url = BASE_URL, api_key = API_KEY, model_names = MODEL_NAMES)
+if DEVICE == "AIR":
+    OLLAMA_PROVIDER_CONFIGS = ProviderConfigs(name = "ollama", base_url = BASE_URL, api_key = API_KEY, model_names = MODEL_NAMES_AIR)
+elif DEVICE == "PRO":
+    OLLAMA_PROVIDER_CONFIGS = ProviderConfigs(name = "ollama", base_url = BASE_URL, api_key = API_KEY, model_names = MODEL_NAMES_PRO)
 
 """
     Model configs for qwen models im using
