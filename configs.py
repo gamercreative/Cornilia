@@ -6,7 +6,8 @@
 # }
 
 # DEFINES THE DEVICE BEING USED
-DEVICE = "AIR"
+DEVICE = "PRO"
+# DEVICE = "AIR"
 
 class ProviderConfigs():
     def __init__(self, name:str, base_url:str, api_key:str, model_names:list[str]):
@@ -33,6 +34,6 @@ elif DEVICE == "PRO":
     these configs do not need to be able to save theere configs as strcutures because it differs between providers and such
 """
 MODEL_RESPONSE_CONFIG = {
-    "max_tokens": 128,
+    "max_tokens": 2048,
     "reasoning_effort": "none"
 }
