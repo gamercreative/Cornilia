@@ -9,6 +9,10 @@ class Tool(ABC):
     @abstractmethod
     def ToolFunction(self, *args, **kwargs): # this function should be implemented by each tool class to do its thing
         pass
+
+    @abstractmethod
+    def get_schema(self) -> dict:
+        pass
     
 class TaxCalculator(Tool):
     def __init__(self):
@@ -18,3 +22,19 @@ class TaxCalculator(Tool):
 
     def ToolFunction(self, amount: float):
         return amount * 3.15
+
+    def get_schema(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.context,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "amount": {"type": "number", "description": "The monetary amount"}
+                    },
+                    "required": ["amount"]
+                }
+            }
+        }

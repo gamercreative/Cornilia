@@ -13,6 +13,7 @@ class Role(str, Enum):
     USER = "user"
     SYSTEM = "system"
     ASSISTANT = "assistant"
+    TOOL = "tool"
     
 class OpenAIFinishReason(str, Enum):
     STOP = "stop"
