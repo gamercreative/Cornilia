@@ -7,7 +7,7 @@
 
 # DEFINES THE DEVICE BEING USED
 # DEVICE = "PRO"
-DEVICE = "AIR"
+DEVICE = "PRO"
 
 class ProviderConfigs():
     def __init__(self, name:str, base_url:str, api_key:str, model_names:list[str]):

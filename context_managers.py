@@ -25,5 +25,12 @@ class CacheModelContextManager():
         self.AppendToConversation({"role": Role.SYSTEM, "content" : message})
 
     # get the history till the last part
-    def GetConversationHistory(self):
+    def GetConversationHistory(self) -> list[dict]:
         return self.MessageHistory
+    
+    def AppendToolCallMessage(self, message):
+        self.AppendToConversation(message.model_dump(exclude_none=True))
+
+    # appends a tools result, tied to the call that asked for it
+    def AppendToolResult(self, tool_call_id:str, result:str):
+        self.AppendToConversation({"role": Role.TOOL, "tool_call_id": tool_call_id, "content": result})

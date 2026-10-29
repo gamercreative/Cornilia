@@ -2,7 +2,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
 # source code from this project
-from configs import ProviderConfigs, OLLAMA_PROVIDER_CONFIGS ,MODEL_RESPONSE_CONFIG
+from configs import ProviderConfigs
 from errors import *
 
 # complimenting the Provider parent class
@@ -28,13 +28,14 @@ class OpenAIProvider():
         )
 
     # used to contact the model with a specific message in a 1 time thing given 1 prompt
-    def OneShotMessage(self, prompt:dict, model_name:str, response_configs:dict) -> ChatCompletion:
+    def OneShotMessage(self, prompt:dict, model_name:str, tools ,response_configs:dict) -> ChatCompletion:
         if model_name not in self.available_models:
             raise HarnessBaseError("model not available")
         
         response = self.client.chat.completions.create(
         model = model_name,
         messages = prompt,
+        tools= tools,
         **response_configs
         )
 

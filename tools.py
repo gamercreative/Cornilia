@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 # this is the interface for tool classes 
 class Tool(ABC):
@@ -7,7 +8,7 @@ class Tool(ABC):
         self.context = context
         
     @abstractmethod
-    def ToolFunction(self, *args, **kwargs): # this function should be implemented by each tool class to do its thing
+    def ToolFunction(self, *args, **kwargs) -> Any: # this function should be implemented by each tool class to do its thing
         pass
 
     @abstractmethod
@@ -20,8 +21,11 @@ class TaxCalculator(Tool):
         context = "used to calculate the tax of a given amount in lebanon"
         super().__init__(name=name, context=context)
 
-    def ToolFunction(self, amount: float):
-        return amount * 3.15
+    def ToolFunction(self, amount: float) -> dict:
+        vat_rate = 3.15
+        tax = amount * vat_rate
+        return {"price": amount, "vat_rate": vat_rate, "tax": tax, "total": round(amount + tax, 2)}
+
 
     def get_schema(self) -> dict:
         return {
@@ -37,4 +41,9 @@ class TaxCalculator(Tool):
                     "required": ["amount"]
                 }
             }
+        }
+    
+tools = {tool.name: tool 
+         for tool in 
+         [TaxCalculator()]
         }
