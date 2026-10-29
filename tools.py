@@ -22,10 +22,9 @@ class TaxCalculator(Tool):
         super().__init__(name=name, context=context)
 
     def ToolFunction(self, amount: float) -> dict:
-        vat_rate = 3.15
+        vat_rate = 0.11
         tax = amount * vat_rate
         return {"price": amount, "vat_rate": vat_rate, "tax": tax, "total": round(amount + tax, 2)}
-
 
     def get_schema(self) -> dict:
         return {

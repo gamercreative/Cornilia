@@ -18,7 +18,8 @@ class OpenAIModel():
         try:
             tool_args = json.loads(tool_call.function.arguments)
             tool = self.tools[tool_call.function.name]
-            return str(tool.ToolFunction(**tool_args))
+            return json.dumps(tool.ToolFunction(**tool_args))
+        
         except Exception as e:
             return f"{SystemResponseTypes.SystemError}: tool {tool_call.function.name} failed: {e}"
 
@@ -53,7 +54,10 @@ class OpenAIModel():
         # reutrn this if the model exceeds the max tokens limit set by the model object
         elif response_finish_reason == "length":
             self.context_manager.AppendSystemMessage(AgentErrorPrompts.length_exceeded)
-            raise MaxTokenError(self.response_configs["max_tokens"])
+            next_resp = self.provider.OneShotMessage(self.context_manager.GetConversationHistory(), self.model_name, self.api_tools, self.response_configs)
+            
+            return self.HandleModelResponse(next_resp)
+
         
     # a function to handle the multi shot messages sent to the model as to retain history etc
     def MutliShotMessage(self, prompt):
