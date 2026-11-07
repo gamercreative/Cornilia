@@ -19,6 +19,13 @@
 # MODEL_NAME = "<model name>"
 # MODEL_RESPONSE_CONFIG = {} # reasoning models take {"max_completion_tokens": ...} instead of max_tokens
 
+# Google Gemini through its OpenAI-compatible endpoint, the same as CORNILIA_PROVIDER=openai with this base url.
+# the key is read from the GEMINI_API_KEY environment variable. list the models your key can use with
+# GET https://generativelanguage.googleapis.com/v1beta/openai/models
+# PROVIDER_CONFIGS = ProviderConfigs(name = "gemini", base_url = "https://generativelanguage.googleapis.com/v1beta/openai/", api_key = os.environ["GEMINI_API_KEY"])
+# MODEL_NAME = "<gemini model name>"
+# MODEL_RESPONSE_CONFIG = {}
+
 # --- model ---
 # MODEL_NAME = "qwen3.5:9b"
 # MODEL_RESPONSE_CONFIG = {"max_tokens": 512, "reasoning_effort": "none"}
