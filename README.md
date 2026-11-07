@@ -38,6 +38,7 @@ Every setting has a default in [`settings.py`](src/cornilia/settings.py). Change
 | `CORNILIA_TOOLS_DIR` | none | Folder of tool modules to load. Try `examples/tools` |
 | `CORNILIA_MAX_STEPS` | `10` | Model responses allowed per turn, counting tool rounds |
 | `CORNILIA_MAX_RETRIES` | `1` | Extra attempts when the provider has a connection, rate limit or server error |
+| `CORNILIA_RETRY_MAX_WAIT` | `30` | Longest wait in seconds before a retry. Cornilia waits as long as the provider's `Retry-After` header asks, otherwise 2s, 4s, 8s and so on |
 | `CORNILIA_TRACE` | off | Set to `1` to print every tool call, its arguments, result and time |
 
 Local model with Ollama:

@@ -31,4 +31,5 @@
 # TOOLS_DIR = "tools" # none by default. a relative path is taken from the folder you run from
 # MAX_STEPS = 10
 # MAX_RETRIES = 1
+# RETRY_MAX_WAIT = 30 # seconds, the longest wait before one retry
 # TRACE_TOOL_CALLS = True

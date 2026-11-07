@@ -38,6 +38,7 @@ def CreateModel(provider:OpenAIProvider, tools:dict, model_name:str | None = Non
         response_configs=settings.MODEL_RESPONSE_CONFIG,
         max_steps=settings.MAX_STEPS,
         max_retries=settings.MAX_RETRIES,
+        retry_max_wait=settings.RETRY_MAX_WAIT,
         tool_tracer=PrintToolTrace if settings.TRACE_TOOL_CALLS else None,
     )
 

@@ -16,7 +16,7 @@ def PrintToolTrace(name:str, arguments, result:str, seconds:float):
 
 class OpenAIModel():
     def __init__(self, model_name:str, provider:OpenAIProvider, context_manager, tools: dict , response_configs:dict,
-                 max_steps:int = 10, max_retries:int = 1, tool_tracer:Callable | None = None):
+                 max_steps:int = 10, max_retries:int = 1, tool_tracer:Callable | None = None, retry_max_wait:float = 30):
         self.provider = provider
         self.model_name = model_name
         self.response_configs = response_configs
@@ -25,6 +25,7 @@ class OpenAIModel():
         self.api_tools = [tool.get_schema() for tool in tools.values()]
         self.max_steps = max(max_steps, 1) # model responses allowed in one turn, counting tool rounds and length continuations
         self.max_retries = max(max_retries, 0) # extra attempts for a provider call that failed with a retryable error
+        self.retry_max_wait = max(retry_max_wait, 0) # the longest wait in seconds before one retry
         self.tool_tracer = tool_tracer # optional hook called after every tool call, see PrintToolTrace
 
     def RunTool(self,tool_call) -> str:
@@ -49,6 +50,17 @@ class OpenAIModel():
     def ResetModelMessageQueue(self):
         self.context_manager.ResetConversation()
 
+    # seconds to wait before retry number `attempt`: the provider's Retry-After header when it sends one,
+    # otherwise exponential backoff (2s, 4s, 8s...), never more than retry_max_wait
+    def RetryWait(self, error:Exception, attempt:int) -> float:
+        response = getattr(error, "response", None) # connection errors have no response
+        retry_after = response.headers.get("retry-after") if response is not None else None
+        try:
+            wait = float(retry_after)
+        except (TypeError, ValueError): # missing, or a date instead of seconds
+            wait = 2 ** attempt
+        return min(max(wait, 0), self.retry_max_wait)
+
     # sends the current history to the provider, retrying a bounded number of times on errors that can pass
     def CallModel(self) -> ChatCompletion:
         attempts = self.max_retries + 1
@@ -58,8 +70,9 @@ class OpenAIModel():
             except RETRYABLE_ERRORS as e:
                 if attempt == attempts:
                     raise RetriesExhaustedError(attempts, e) from e
-                print(f"{SystemResponseTypes.SystemWarning}: model call failed ({e}), retrying {attempt}/{self.max_retries}")
-                time.sleep(attempt)
+                wait = self.RetryWait(e, attempt)
+                print(f"{SystemResponseTypes.SystemWarning}: model call failed ({e}), retrying in {wait:g}s ({attempt}/{self.max_retries})")
+                time.sleep(wait)
         raise HarnessBaseError("unreachable") # keeps type checkers happy, the loop always returns or raises
 
     # the agent loop: handles a response, runs any tools it asks for and calls the model again until it gives a final answer

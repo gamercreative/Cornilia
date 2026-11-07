@@ -79,6 +79,8 @@ TOOLS_DIR = os.environ.get("CORNILIA_TOOLS_DIR")
 # agent loop limits
 MAX_STEPS = EnvInt("CORNILIA_MAX_STEPS", 10)
 MAX_RETRIES = EnvInt("CORNILIA_MAX_RETRIES", 1)
+# the longest wait in seconds before a retry, whether it comes from the provider's Retry-After header or from backoff
+RETRY_MAX_WAIT = EnvInt("CORNILIA_RETRY_MAX_WAIT", 30)
 
 # print every tool call with its arguments, result and time taken
 TRACE_TOOL_CALLS = EnvFlag("CORNILIA_TRACE")
