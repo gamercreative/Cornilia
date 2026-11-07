@@ -136,9 +136,15 @@ def LoadTools(folder:str | Path) -> dict[str, Tool]:
             sys.modules.pop(module_name, None) # drop the half loaded module
             print(f"{SystemResponseTypes.SystemWarning}: could not load tools from {path.name}: {e}")
             continue
-        for value in vars(module).values():
+        module_tools = [value for value in vars(module).values() if isinstance(value, Tool)]
+        # a function without @tool is a plain function, so say so instead of skipping the file silently
+        if not module_tools:
+            print(f"{SystemResponseTypes.SystemWarning}: {path.name} defines no tools. Put @tool on the line above each tool function, "
+                  f"or start the file name with _ if it only holds helpers")
+            continue
+        for value in module_tools:
             # the same tool imported into a second file is one tool, not a duplicate
-            if isinstance(value, Tool) and all(value is not other for other in found):
+            if all(value is not other for other in found):
                 found.append(value)
 
     return BuildToolRegistry(found)
