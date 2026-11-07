@@ -4,7 +4,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
 # source code from this project
-from errors import *
+from .errors import *
 
 # the connection details for one OpenAI-compatible provider
 @dataclass
@@ -15,7 +15,7 @@ class ProviderConfigs():
     model_names:list[str] | None = None # optional allow list, None or empty means any model the provider serves
     timeout:float = 120 # seconds before a request to the provider gives up
 
-# complimenting the Provider parent class
+# a provider reached through the OpenAI-compatible chat completions API
 """
     The provider is the way we speak to a model and the provider must show a name and a model name. to interface with the model
     the provider can also have a select list of models that we allow, if it has none then any model the provider serves is allowed
@@ -57,4 +57,4 @@ class OpenAIProvider():
         **response_configs
         )
 
-        return response # is sucessful the function will return the chatcomletion type variable from create
+        return response

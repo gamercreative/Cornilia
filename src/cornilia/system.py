@@ -28,10 +28,10 @@ class OpenAIFinishReason(StrValueEnum):
     TOOL_CALLS = "tool_calls"
     CONTENT = "content_filter"
     
-# this is a list of errors that the 
+# prompts the harness sends to the model itself
 @dataclass(frozen=True)
 class AgentErrorPrompts:
-    # if the return token length of hte model exceeds max length
+    # sent when a reply hits the max tokens limit, so the model continues it
     length_exceeded: str = f"{SystemResponseTypes.SystemError}: MAX_TOKENS_REACHED. Continue the previous output string exactly from the point of interruption. DO NOT output introductory text."
 
 # fills $date, $time, $datetime and $weekday (plus any extra values given) into a system prompt

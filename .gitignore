@@ -1,3 +1,14 @@
-__pycache__/
-.vscode
+# local configuration, holds secrets
 configs.py
+.env
+
+# python
+__pycache__/
+*.egg-info/
+build/
+dist/
+.venv/
+
+# editors
+.vscode/
+.DS_Store

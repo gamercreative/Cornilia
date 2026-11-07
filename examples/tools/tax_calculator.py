@@ -1,4 +1,4 @@
-from tools import Tool
+from cornilia.tools import Tool
 
 # an example of a tool written as a Tool subclass with a hand-written schema, for full control
 

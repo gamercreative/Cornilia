@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Annotated, Any, Callable, Literal, Union
 
-from system import *
+from .system import *
 
 # this is the interface for tool classes
 class Tool(ABC):

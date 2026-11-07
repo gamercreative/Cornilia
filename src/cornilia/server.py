@@ -6,15 +6,15 @@ from fastapi import FastAPI, HTTPException
 from openai import OpenAIError
 from pydantic import BaseModel, ConfigDict, Field
 
-from errors import *
-from main import CreateModel, CreateProvider, CreateTools, LoadSystemPrompt
-from models import OpenAIModel
+from .errors import *
+from .main import CreateModel, CreateProvider, CreateTools, LoadSystemPrompt
+from .models import OpenAIModel
 
 app = FastAPI()
 
 """
-    endpoints go here and are served thorugh this endpoint
-    run from this folder with `uvicorn server:app`, or from anywhere with `uvicorn --app-dir <path to Cornilia> server:app`
+    the HTTP API, built on the same wiring as the terminal chat
+    run it with `uvicorn cornilia.server:app` from the folder that holds your configs.py and tools
 """
 
 provider = CreateProvider()
@@ -150,7 +150,7 @@ def continue_conversation(body:MultiShotRequest):
         )
 
 
-# this endpoint is to one shot messages without hisotry without memory
+# answers one message with a fresh model, nothing is remembered
 @app.post("/one-shot", response_model=OneShotResponse)
 def create_conversation(body:OneShotRequest):
     model = NewModel(body.model_name, body.system_prompt) # a fresh model and context manager, so nothing is remembered
