@@ -4,7 +4,7 @@
 # keep secrets out of this template, put real keys in your configs.py or in environment variables.
 
 # import os
-# from providers import ProviderConfigs
+# from cornilia.providers import ProviderConfigs
 
 # --- provider: any OpenAI-compatible server ---
 # PROVIDER_CONFIGS = ProviderConfigs(
@@ -28,7 +28,7 @@
 # SYSTEM_PROMPT_FILE = "prompts/system.txt" # used when SYSTEM_PROMPT is not set
 
 # --- tools and the agent loop ---
-# TOOLS_DIR = "examples/tools" # none by default. relative paths are looked up in the folder you run from, then the Cornilia folder
+# TOOLS_DIR = "tools" # none by default. a relative path is taken from the folder you run from
 # MAX_STEPS = 10
 # MAX_RETRIES = 1
 # TRACE_TOOL_CALLS = True

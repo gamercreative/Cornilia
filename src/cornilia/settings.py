@@ -1,15 +1,14 @@
 import os
+import sys
 from pathlib import Path
 
-from providers import ProviderConfigs
+from .providers import ProviderConfigs
 
 """
     Every setting Cornilia uses, with its default.
     Defaults come from environment variables, then an optional local configs.py (not committed, see configs.example.py)
     can override any name defined here. Values in configs.py win over environment variables.
 """
-
-PROJECT_DIR = Path(__file__).resolve().parent
 
 # presets for OpenAI-compatible providers, pick one with CORNILIA_PROVIDER
 PROVIDER_PRESETS = {
@@ -29,14 +28,11 @@ PROVIDER_PRESETS = {
     },
 }
 
-# a relative path is looked up in the folder you run from first, then in the Cornilia folder, so the defaults work from anywhere
+# a relative path is taken from the folder you run from, which is your project when Cornilia is installed as a package
 def ProjectPath(path:str | None) -> Path | None:
     if not path:
         return None
-    path = Path(path).expanduser()
-    if path.is_absolute() or path.exists():
-        return path
-    return PROJECT_DIR / path
+    return Path(path).expanduser()
 
 # an integer setting from the environment, empty means the default
 def EnvInt(name:str, default:int) -> int:
@@ -86,6 +82,11 @@ MAX_RETRIES = EnvInt("CORNILIA_MAX_RETRIES", 1)
 
 # print every tool call with its arguments, result and time taken
 TRACE_TOOL_CALLS = EnvFlag("CORNILIA_TRACE")
+
+# your project is the folder you run from. it goes on the import path so its configs.py, and any module your
+# tools import, are found however Cornilia was started (python -m cornilia, the cornilia command, uvicorn or a script)
+if os.getcwd() not in sys.path:
+    sys.path.append(os.getcwd())
 
 # local overrides, a missing configs.py is fine but an error inside it is not hidden
 try:

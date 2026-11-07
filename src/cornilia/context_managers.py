@@ -1,8 +1,8 @@
-from system import *
+from .system import *
 
-# Compliments the ModelContextManager parent class
+# a context manager that keeps the conversation in memory
 """
-    Uses the apps cache to handle model memory and if not persisted then its gone
+    the history lives only in this process, so it is gone when the program stops
 """
 class CacheModelContextManager():
     def __init__(self, system_prompt:str | None = None):
@@ -17,7 +17,7 @@ class CacheModelContextManager():
         if self.system_prompt:
             self.AppendSystemMessage(RenderSystemPrompt(self.system_prompt))
 
-    # apppends conversaton to exsiting convo in cache
+    # appends a message to the conversation
     def AppendToConversation(self, message:dict):
         self.MessageHistory.append(message)
         

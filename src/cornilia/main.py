@@ -1,9 +1,9 @@
-from system import *
-from context_managers import *
-from providers import *
-from models import *
-from tools import *
-import settings
+from .system import *
+from .context_managers import *
+from .providers import *
+from .models import *
+from .tools import *
+from . import settings
 import openai
 
 # reads the system prompt template from settings, SYSTEM_PROMPT first and SYSTEM_PROMPT_FILE if that is not set
@@ -46,9 +46,8 @@ def CreateTools() -> dict:
     tools_dir = settings.ProjectPath(settings.TOOLS_DIR)
     return LoadTools(tools_dir) if tools_dir else {}
 
-# the loop for contacting the model and handlign the model inputs
-# guarded so server.py can import the wiring above without starting the cli loop
-if __name__ == "__main__":
+# the terminal chat loop, started with `python -m cornilia` or the `cornilia` command
+def RunChat():
     # a setup problem (no model, missing prompt file, no api key) ends with one clear line instead of a traceback
     try:
         model = CreateModel(CreateProvider(), CreateTools())
@@ -66,3 +65,6 @@ if __name__ == "__main__":
             print(model.MultiShotMessage(prompt))
         except (HarnessBaseError, openai.OpenAIError) as e: # the turn is undone, so the next message starts clean
             print(f"{SystemResponseTypes.SystemError}: {e}")
+
+if __name__ == "__main__":
+    RunChat()

@@ -1,6 +1,6 @@
-from providers import *
-from system import *
-from errors import *
+from .providers import *
+from .system import *
+from .errors import *
 from typing import Callable
 import json
 import time
@@ -69,7 +69,7 @@ class OpenAIModel():
 
         while True:
             if not isinstance(resp, ChatCompletion):
-                raise ProviderResponseError("error the repsones from the openai model passed on is not ChatCompletion")
+                raise ProviderResponseError("the provider response is not a ChatCompletion")
             if not resp.choices:
                 raise ProviderResponseError("the provider returned a response with no choices")
 

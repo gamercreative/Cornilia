@@ -1,4 +1,4 @@
-from system import *
+from .system import *
 
 class HarnessBaseError(Exception):
     pass

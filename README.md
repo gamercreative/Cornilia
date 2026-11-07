@@ -11,15 +11,21 @@ Python 3.10 or newer.
 ```bash
 git clone https://github.com/gamercreative/Cornilia.git
 cd Cornilia
-pip install -r requirements.txt          # the agent loop only
-pip install -r requirements-server.txt   # also the HTTP server
+pip install -e .            # the agent loop
+pip install -e ".[server]"  # also the HTTP server
 ```
 
-Releases are tagged. A project built on Cornilia should pin one instead of following `main`, for example `git clone --branch v0.1.0 https://github.com/gamercreative/Cornilia.git`. See [`CHANGELOG.md`](CHANGELOG.md) for what changed in each version.
+To use Cornilia in another project, install a tagged release instead of following `main`:
+
+```bash
+pip install "cornilia @ git+https://github.com/gamercreative/Cornilia.git@v0.1.0"
+```
+
+What changed in each version is listed on the [releases page](https://github.com/gamercreative/Cornilia/releases).
 
 ## Configure
 
-Every setting has a default in [`settings.py`](settings.py). Change them with environment variables, or copy [`configs.example.py`](configs.example.py) to `configs.py` (not committed) and set what you need there. Values in `configs.py` win over environment variables.
+Every setting has a default in [`settings.py`](src/cornilia/settings.py). Change them with environment variables, or copy [`configs.example.py`](configs.example.py) to `configs.py` in the folder you run from (it is gitignored) and set what you need there. Values in `configs.py` win over environment variables.
 
 | Environment variable | Default | What it does |
 | --- | --- | --- |
@@ -38,19 +44,19 @@ Local model with Ollama:
 
 ```bash
 ollama pull qwen3.5:9b
-python main.py
+python -m cornilia
 ```
 
 With the example tools and a trace of every tool call:
 
 ```bash
-CORNILIA_TOOLS_DIR=examples/tools CORNILIA_TRACE=1 python main.py
+CORNILIA_TOOLS_DIR=examples/tools CORNILIA_TRACE=1 python -m cornilia
 ```
 
 Hosted OpenAI-compatible API:
 
 ```bash
-CORNILIA_PROVIDER=openai OPENAI_API_KEY=sk-... CORNILIA_MODEL=<model name> python main.py
+CORNILIA_PROVIDER=openai OPENAI_API_KEY=sk-... CORNILIA_MODEL=<model name> python -m cornilia
 ```
 
 For any other hosted server, set `CORNILIA_BASE_URL` and `CORNILIA_API_KEY` and also `CORNILIA_PROVIDER=openai`. The default `ollama` preset sends `max_tokens` and `reasoning_effort`, which some hosted servers reject. OpenAI reasoning models take `max_completion_tokens` instead of `max_tokens`. Set it in `MODEL_RESPONSE_CONFIG` in `configs.py`.
@@ -60,7 +66,7 @@ The system prompt can use `$date`, `$time`, `$datetime` and `$weekday`. They are
 ## Run
 
 ```bash
-python main.py
+python -m cornilia    # or just: cornilia
 ```
 
 That starts a chat loop in the terminal. Each message runs one turn of the agent loop. If a turn fails, the error is printed and the history goes back to how it was before that message.
@@ -68,9 +74,10 @@ That starts a chat loop in the terminal. Each message runs one turn of the agent
 ### HTTP server
 
 ```bash
-uvicorn server:app --reload                       # from the Cornilia folder
-uvicorn --app-dir path/to/Cornilia server:app     # from anywhere else
+uvicorn cornilia.server:app --reload
 ```
+
+Run it from the folder that holds your `configs.py` and tools, since relative paths are taken from there.
 
 Interactive docs are at `http://localhost:8000/docs`.
 
@@ -88,7 +95,7 @@ A tool is any `Tool` object defined at the top of a `.py` file in the tools fold
 
 ```python
 from typing import Annotated
-from tools import tool
+from cornilia.tools import tool
 
 @tool
 def count_words(text: Annotated[str, "The text to count the words of"]) -> dict:
@@ -100,7 +107,33 @@ Parameters without a default are required. `Literal[...]` becomes an enum, and `
 
 For full control, subclass `Tool` and write `ToolFunction` and `get_schema` yourself. See [`examples/tools/tax_calculator.py`](examples/tools/tax_calculator.py).
 
-Drop the file into your tools folder (`CORNILIA_TOOLS_DIR`) and it is loaded at startup. A file that fails to import, or a tool name already taken, is skipped with a printed warning.
+Drop the file into your tools folder (`CORNILIA_TOOLS_DIR`) and it is loaded at startup. A tool file can import other modules from the folder you run from, such as your project's data. A file that fails to import, or a tool name already taken, is skipped with a printed warning.
+
+## Use it from your own code
+
+```python
+from cornilia import main
+
+provider = main.CreateProvider()
+model = main.CreateModel(provider, main.LoadTools("tools"))
+print(model.MultiShotMessage("What can you do?"))
+```
+
+`CreateModel` reads the same settings as the terminal chat. `MultiShotMessage` remembers the conversation. It raises `RetriesExhaustedError`, `MaxStepsError`, `ContentFilterError` or `ProviderResponseError` (all from `cornilia.errors`) when a turn fails, and leaves the history as it was before the message.
+
+## Project layout
+
+| Path | What it holds |
+| --- | --- |
+| `src/cornilia/main.py` | Wiring: `CreateProvider`, `CreateModel`, `CreateTools`, and the terminal chat |
+| `src/cornilia/models.py` | The agent loop: sends messages, runs tool calls, handles finish reasons |
+| `src/cornilia/providers.py` | The connection to an OpenAI-compatible provider |
+| `src/cornilia/context_managers.py` | Conversation history |
+| `src/cornilia/tools.py` | The `Tool` interface, `@tool`, and `LoadTools` |
+| `src/cornilia/settings.py` | Every setting and its default |
+| `src/cornilia/system.py`, `errors.py` | Shared enums, prompts and error types |
+| `src/cornilia/server.py` | The HTTP API |
+| `examples/tools/` | Example tools |
 
 ## Contributing
 

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from tools import tool
+from cornilia.tools import tool
 
 # an example of a tool written as a plain function, the schema comes from the docstring and type hints
 @tool
