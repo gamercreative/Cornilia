@@ -125,6 +125,8 @@ def count_words(text: Annotated[str, "The text to count the words of"]) -> dict:
 
 Parameters without a default are required. `Literal[...]` becomes an enum, and `list[str]`, `int | None` and similar hints work as you would expect.
 
+For a larger example, [`examples/github_tools`](examples/github_tools/README.md) gives a model read and write access to GitHub repositories, issues and pull requests, with writing off until you turn it on.
+
 For full control, subclass `Tool` and write `ToolFunction` and `get_schema` yourself. See [`examples/tools/tax_calculator.py`](examples/tools/tax_calculator.py).
 
 Drop the file into your tools folder (`CORNILIA_TOOLS_DIR`) and it is loaded at startup. A tool file can import other modules from the folder you run from, such as your project's data. A file that fails to import, a file that defines no tools (for example a function missing its `@tool`), and a tool name already taken are each skipped with a printed warning. Files whose name starts with `_` are not loaded, so use that for helper modules.
@@ -154,6 +156,7 @@ print(model.MultiShotMessage("What can you do?"))
 | `src/cornilia/system.py`, `errors.py` | Shared enums, prompts and error types |
 | `src/cornilia/server.py` | The HTTP API |
 | `examples/tools/` | Example tools |
+| `examples/github_tools/` | Tools for reading and writing GitHub repositories, issues and pull requests. See its [README](examples/github_tools/README.md) |
 
 ## Contributing
 
