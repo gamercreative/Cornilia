@@ -85,6 +85,31 @@ RETRY_MAX_WAIT = EnvInt("CORNILIA_RETRY_MAX_WAIT", 30)
 # print every tool call with its arguments, result and time taken
 TRACE_TOOL_CALLS = EnvFlag("CORNILIA_TRACE")
 
+# --- planner/executor team, see orchestration.py ---
+# setting PLANNER_MODEL turns the terminal chat into a team: the planner model thinks and gives instructions,
+# the executor model carries them out with the tools. leave it unset for the usual single model chat
+PLANNER_MODEL = os.environ.get("CORNILIA_PLANNER_MODEL")
+EXECUTOR_MODEL = os.environ.get("CORNILIA_EXECUTOR_MODEL") # none means MODEL_NAME
+
+# a role can use another provider than PROVIDER_CONFIGS, for example a hosted planner and a local executor.
+# set these to a ProviderConfigs in configs.py, none means PROVIDER_CONFIGS
+PLANNER_PROVIDER_CONFIGS = None
+EXECUTOR_PROVIDER_CONFIGS = None
+
+# request options per role, none means MODEL_RESPONSE_CONFIG. the planner gets its own because reasoning
+# models need room to think, and the ollama preset turns thinking off for the single model chat
+PLANNER_RESPONSE_CONFIG = None
+if os.environ.get("CORNILIA_PLANNER_MAX_TOKENS", "").strip() or PROVIDER_NAME == "ollama":
+    PLANNER_RESPONSE_CONFIG = {"max_tokens": EnvInt("CORNILIA_PLANNER_MAX_TOKENS", 4096)}
+EXECUTOR_RESPONSE_CONFIG = None
+
+# system prompts per role, none means the built in prompts in system.py (TeamPrompts)
+PLANNER_SYSTEM_PROMPT = os.environ.get("CORNILIA_PLANNER_SYSTEM_PROMPT")
+EXECUTOR_SYSTEM_PROMPT = os.environ.get("CORNILIA_EXECUTOR_SYSTEM_PROMPT")
+
+# planner -> executor exchanges allowed for one task
+MAX_ROUNDS = EnvInt("CORNILIA_MAX_ROUNDS", 5)
+
 # your project is the folder you run from. it goes on the import path so its configs.py, and any module your
 # tools import, are found however Cornilia was started (python -m cornilia, the cornilia command, uvicorn or a script)
 if os.getcwd() not in sys.path:

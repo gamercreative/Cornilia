@@ -40,3 +40,10 @@ class RetriesExhaustedError(HarnessBaseError):
 # raised when the provider sends back a response the harness cannot use
 class ProviderResponseError(HarnessBaseError):
     pass
+
+# raised when the planner and executor use up their rounds without a final answer
+class MaxRoundsError(HarnessBaseError):
+    def __init__(self, max_rounds:int, last_report:str | None = None):
+        super().__init__(f"the planner gave no final answer within {max_rounds} rounds")
+        self.max_rounds = max_rounds
+        self.last_report = last_report # the executor's last report, so the work done so far is not lost

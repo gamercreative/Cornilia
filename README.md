@@ -109,6 +109,59 @@ Interactive docs are at `http://localhost:8000/docs`.
 
 `status` is `ok`, `content_filter` (the provider blocked the reply) or `max_steps` (the step limit was hit). In the last two cases `response` is `null`. Errors use FastAPI's `{"detail": "..."}` with 400 (no model set, or a model outside the provider's `model_names` allow list), 404 (unknown conversation), 422 (bad body) or 502 (the provider failed or sent an unusable reply). With no allow list, a model the provider doesn't serve comes back as 502. Conversations are kept in memory, so a restart forgets them.
 
+## Two models: a planner and an executor
+
+Cornilia can pair two models on one task. The **planner** (also called orchestrator or thinker) reads the task, breaks it into steps and writes instructions. It never calls tools. The **executor** carries out each instruction with the tools and reports back. The planner checks the report, then gives the next instruction or the final answer.
+
+```
+task -> planner -> instructions -> executor (+ tools) -> report -> planner -> ... -> FINAL ANSWER
+```
+
+This is the planner/executor pattern, the same split as plan-and-solve prompting and "plan-and-execute" agents. It lets a slow reasoning model (for example `deepseek-r1`) do the thinking while a faster model that is good at tool calls and code (for example a `qwen` coder model) does the work. Each role is an ordinary model with its own conversation, so either role can be any model on any OpenAI-compatible provider.
+
+Turn it on by naming a planner model. The executor uses `CORNILIA_EXECUTOR_MODEL`, or `CORNILIA_MODEL` when that is not set:
+
+```bash
+ollama pull deepseek-r1:8b
+ollama pull qwen2.5-coder:7b   # any model that supports tool calls, see `ollama list`
+CORNILIA_PLANNER_MODEL=deepseek-r1:8b CORNILIA_EXECUTOR_MODEL=qwen2.5-coder:7b CORNILIA_TOOLS_DIR=examples/tools python -m cornilia
+```
+
+The terminal chat then shows every message between the two roles, and the final answer. Change the models while it runs:
+
+| Command | What it does |
+| --- | --- |
+| `/planner <model>` | Gives the planner another model |
+| `/executor <model>` | Gives the executor another model |
+| `/swap` | The planner's model becomes the executor's and the other way round |
+| `/roles` | Shows which model plays which role |
+| `/reset` | Clears both conversations |
+
+| Environment variable | Default | What it does |
+| --- | --- | --- |
+| `CORNILIA_PLANNER_MODEL` | none | Planner model. Setting it turns the chat into a team |
+| `CORNILIA_EXECUTOR_MODEL` | `CORNILIA_MODEL` | Executor model |
+| `CORNILIA_PLANNER_MAX_TOKENS` | `4096` for `ollama` | Max tokens per planner reply. Reasoning models need room to think |
+| `CORNILIA_MAX_ROUNDS` | `5` | Planner to executor exchanges allowed per task |
+| `CORNILIA_PLANNER_SYSTEM_PROMPT`, `CORNILIA_EXECUTOR_SYSTEM_PROMPT` | built in, see `TeamPrompts` in `system.py` | Replace a role's system prompt |
+
+The planner finishes by writing `FINAL ANSWER:` at the start of a line. To give each role its own provider, for example a hosted planner and a local executor, set `PLANNER_PROVIDER_CONFIGS` or `EXECUTOR_PROVIDER_CONFIGS` in `configs.py` (see `configs.example.py`). `PLANNER_RESPONSE_CONFIG` and `EXECUTOR_RESPONSE_CONFIG` set each role's request options.
+
+From your own code:
+
+```python
+from cornilia import main
+
+team = main.CreatePlannerExecutor(main.CreateProvider(), main.LoadTools("tools"),
+                                  planner_model="deepseek-r1:8b", executor_model="qwen2.5-coder:7b")
+result = team.Run("Write a function that checks if a string is a palindrome, and test it.")
+print(result.answer)
+
+team.SwapModels()                                # or team.SetRoleModel("executor", "another-model")
+```
+
+`Run` raises `MaxRoundsError` (with the executor's `last_report`) when the planner gives no final answer in time, and the same errors as `MultiShotMessage`. Either way both conversations go back to how they were before the task.
+
 ## Write a tool
 
 A tool is any `Tool` object defined at the top of a `.py` file in the tools folder. The shortest way is a plain function with the `@tool` decorator. The name, docstring and type hints become the schema the model sees:
@@ -149,6 +202,7 @@ print(model.MultiShotMessage("What can you do?"))
 | --- | --- |
 | `src/cornilia/main.py` | Wiring: `CreateProvider`, `CreateModel`, `CreateTools`, and the terminal chat |
 | `src/cornilia/models.py` | The agent loop: sends messages, runs tool calls, handles finish reasons |
+| `src/cornilia/orchestration.py` | The planner/executor team |
 | `src/cornilia/providers.py` | The connection to an OpenAI-compatible provider |
 | `src/cornilia/context_managers.py` | Conversation history |
 | `src/cornilia/tools.py` | The `Tool` interface, `@tool`, and `LoadTools` |
