@@ -40,3 +40,13 @@
 # MAX_RETRIES = 1
 # RETRY_MAX_WAIT = 30 # seconds, the longest wait before one retry
 # TRACE_TOOL_CALLS = True
+
+# --- planner/executor team, a planner model turns the chat into a team (see the README) ---
+# PLANNER_MODEL = "deepseek-r1:8b"
+# EXECUTOR_MODEL = "qwen2.5-coder:7b" # leave out to use MODEL_NAME
+# PLANNER_RESPONSE_CONFIG = {"max_tokens": 4096} # reasoning models need room to think
+# EXECUTOR_RESPONSE_CONFIG = {"max_tokens": 2048}
+# MAX_ROUNDS = 5
+# a role can use its own provider, for example a hosted planner and a local executor
+# PLANNER_PROVIDER_CONFIGS = ProviderConfigs(name = "deepseek", base_url = "https://api.deepseek.com", api_key = os.environ["DEEPSEEK_API_KEY"])
+# PLANNER_RESPONSE_CONFIG = {}
