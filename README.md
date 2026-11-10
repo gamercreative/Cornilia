@@ -54,11 +54,30 @@ With the example tools and a trace of every tool call:
 CORNILIA_TOOLS_DIR=examples/tools CORNILIA_TRACE=1 python -m cornilia
 ```
 
+On Windows, the `NAME=value command` form used in these examples doesn't work in Command Prompt or PowerShell. Put the same values in your `configs.py` instead, then run `python -m cornilia`:
+
+| Environment variable | In `configs.py` |
+| --- | --- |
+| `CORNILIA_PROVIDER`, `CORNILIA_BASE_URL`, `CORNILIA_API_KEY` | `PROVIDER_CONFIGS = ProviderConfigs(...)`, see `configs.example.py` |
+| `CORNILIA_MODEL` | `MODEL_NAME` |
+| `CORNILIA_MAX_TOKENS` | `MODEL_RESPONSE_CONFIG = {"max_tokens": ...}` |
+| `CORNILIA_TRACE=1` | `TRACE_TOOL_CALLS = True` |
+| any other `CORNILIA_<NAME>` | `<NAME>`, for example `TOOLS_DIR = "examples/tools"` |
+
 Hosted OpenAI-compatible API:
 
 ```bash
 CORNILIA_PROVIDER=openai OPENAI_API_KEY=sk-... CORNILIA_MODEL=<model name> python -m cornilia
 ```
+
+Google Gemini works the same way through its OpenAI-compatible endpoint:
+
+```bash
+CORNILIA_PROVIDER=openai CORNILIA_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/ \
+  CORNILIA_API_KEY=$GEMINI_API_KEY CORNILIA_MODEL=<gemini model name> python -m cornilia
+```
+
+`configs.example.py` has the same setup as a commented `configs.py` block.
 
 For any other hosted server, set `CORNILIA_BASE_URL` and `CORNILIA_API_KEY` and also `CORNILIA_PROVIDER=openai`. The default `ollama` preset sends `max_tokens` and `reasoning_effort`, which some hosted servers reject. OpenAI reasoning models take `max_completion_tokens` instead of `max_tokens`. Set it in `MODEL_RESPONSE_CONFIG` in `configs.py`.
 
@@ -108,7 +127,7 @@ Parameters without a default are required. `Literal[...]` becomes an enum, and `
 
 For full control, subclass `Tool` and write `ToolFunction` and `get_schema` yourself. See [`examples/tools/tax_calculator.py`](examples/tools/tax_calculator.py).
 
-Drop the file into your tools folder (`CORNILIA_TOOLS_DIR`) and it is loaded at startup. A tool file can import other modules from the folder you run from, such as your project's data. A file that fails to import, or a tool name already taken, is skipped with a printed warning.
+Drop the file into your tools folder (`CORNILIA_TOOLS_DIR`) and it is loaded at startup. A tool file can import other modules from the folder you run from, such as your project's data. A file that fails to import, a file that defines no tools (for example a function missing its `@tool`), and a tool name already taken are each skipped with a printed warning. Files whose name starts with `_` are not loaded, so use that for helper modules.
 
 ## Use it from your own code
 
