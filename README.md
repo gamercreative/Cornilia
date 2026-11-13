@@ -38,7 +38,7 @@ Every setting has a default in [`settings.py`](src/cornilia/settings.py). Change
 | `CORNILIA_MAX_TOKENS` | `512` for `ollama` | Max tokens per reply. A longer reply is continued automatically, but a tool call cut off by the limit stops the turn with an error, so raise it for tools with large arguments |
 | `CORNILIA_TIMEOUT` | `120` | Seconds before a request to the provider gives up. Raise it for large local models. In `configs.py` it is `timeout=` in `ProviderConfigs` |
 | `CORNILIA_SYSTEM_PROMPT` / `CORNILIA_SYSTEM_PROMPT_FILE` | none | System prompt for every new conversation |
-| `CORNILIA_TOOLS_DIR` | none | Folder of tool modules to load. Try `examples/tools` |
+| `CORNILIA_TOOLS_DIR` | none | Folder of tool modules to load. Try `examples/tools`. Several folders are separated by `:` on macOS and Linux and `;` on Windows (`os.pathsep`). In `configs.py`, `TOOLS_DIR` can also be a list |
 | `CORNILIA_MAX_STEPS` | `10` | Model responses allowed per turn, counting tool rounds |
 | `CORNILIA_MAX_RETRIES` | `1` | Extra attempts when the provider has a connection, rate limit or server error |
 | `CORNILIA_RETRY_MAX_WAIT` | `30` | Longest wait in seconds before a retry. Cornilia waits as long as the provider's `Retry-After` header asks, otherwise 2s, 4s, 8s and so on |
@@ -57,6 +57,12 @@ With the example tools and a trace of every tool call:
 
 ```bash
 CORNILIA_TOOLS_DIR=examples/tools CORNILIA_TRACE=1 python -m cornilia
+```
+
+Load tools from several folders at once by joining them with `:` (`;` on Windows):
+
+```bash
+CORNILIA_TOOLS_DIR=examples/tools:examples/github_tools python -m cornilia
 ```
 
 On Windows, the `NAME=value command` form used in these examples doesn't work in Command Prompt or PowerShell. Put the same values in your `configs.py` instead, then run `python -m cornilia`:
@@ -191,7 +197,7 @@ For a larger example, [`examples/github_tools`](examples/github_tools/README.md)
 
 For full control, subclass `Tool` and write `ToolFunction` and `get_schema` yourself. See [`examples/tools/tax_calculator.py`](examples/tools/tax_calculator.py).
 
-Drop the file into your tools folder (`CORNILIA_TOOLS_DIR`) and it is loaded at startup. A tool file can import other modules from the folder you run from, such as your project's data. A file that fails to import, a file that defines no tools (for example a function missing its `@tool`), and a tool name already taken are each skipped with a printed warning. Files whose name starts with `_` are not loaded, so use that for helper modules.
+Drop the file into your tools folder (`CORNILIA_TOOLS_DIR`) and it is loaded at startup. A tool file can import other modules from the folder you run from, such as your project's data. A file that fails to import, a file that defines no tools (for example a function missing its `@tool`), and a tool name already taken in the same folder are each skipped with a printed warning. When two different tools folders define the same tool name, Cornilia stops with an error that names both files, so one tool never silently replaces another. Files whose name starts with `_` are not loaded, so use that for helper modules.
 
 ## Use it from your own code
 

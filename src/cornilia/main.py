@@ -45,10 +45,10 @@ def CreateModel(provider:OpenAIProvider, tools:dict, model_name:str | None = Non
         tool_tracer=PrintToolTrace if settings.TRACE_TOOL_CALLS else None,
     )
 
-# load the tools from the configured folder
+# load the tools from the configured folders, a tool name found in two folders is an error
 def CreateTools() -> dict:
-    tools_dir = settings.ProjectPath(settings.TOOLS_DIR)
-    return LoadTools(tools_dir) if tools_dir else {}
+    folders = settings.ToolsFolders(settings.TOOLS_DIR)
+    return LoadTools(folders) if folders else {}
 
 # the planner/executor team from settings. the planner gets no tools, it only thinks and gives instructions,
 # the executor gets the tools. each role has its own conversation, and can have its own provider
