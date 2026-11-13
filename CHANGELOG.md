@@ -4,6 +4,9 @@ Downstream projects pin a tagged release, so every change in behaviour gets a li
 
 ## Unreleased
 
+- `CORNILIA_TOOLS_DIR` / `TOOLS_DIR` takes several folders, joined with `os.pathsep` (`:` on macOS and Linux, `;` on
+  Windows), or a list in `configs.py`. `LoadTools` accepts a list of folders too. A tool name defined in two folders stops
+  with `DuplicateToolError` naming both files. A single folder works as before.
 - Added a planner/executor team (`cornilia.orchestration.PlannerExecutor`): a planner model thinks and gives
   instructions, an executor model carries them out with the tools. Turn it on in the terminal chat with
   `CORNILIA_PLANNER_MODEL`, and change or swap the two models while it runs with `/planner`, `/executor` and `/swap`.

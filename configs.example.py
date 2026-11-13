@@ -36,6 +36,7 @@
 
 # --- tools and the agent loop ---
 # TOOLS_DIR = "tools" # none by default. a relative path is taken from the folder you run from
+# TOOLS_DIR = ["tools", "examples/github_tools"] # several folders, a tool name found in two of them is an error
 # MAX_STEPS = 10
 # MAX_RETRIES = 1
 # RETRY_MAX_WAIT = 30 # seconds, the longest wait before one retry
