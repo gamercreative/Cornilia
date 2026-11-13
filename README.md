@@ -15,6 +15,7 @@ python3.12 -m venv .venv && source .venv/bin/activate   # on Windows: .venv\Scri
 pip install -e .            # the agent loop
 pip install -e ".[server]"  # also the HTTP server
 pip install -e ".[dev]"     # also the tests, run them with pytest
+pip install -e ".[web]"     # also the web and dataset example tools in examples/web_tools
 ```
 
 To use Cornilia in another project, install a tagged release instead of following `main`:
@@ -193,7 +194,7 @@ For a nested object, describe it with a `TypedDict`: the model sees each field w
 
 Smaller models often send `"10"` for a number, `"true"` for a flag or a list written as a JSON string. When the type hint makes the meaning clear, Cornilia converts the value before calling your function, and a `null` for an argument that has a default means "use the default".
 
-For a larger example, [`examples/github_tools`](examples/github_tools/README.md) gives a model read and write access to GitHub repositories, issues and pull requests, with writing off until you turn it on.
+For a larger example, [`examples/github_tools`](examples/github_tools/README.md) gives a model read and write access to GitHub repositories, issues and pull requests, with writing off until you turn it on. [`examples/web_tools`](examples/web_tools/README.md) lets a small model scrape pages and build clean datasets, with the exact work done in code.
 
 For full control, subclass `Tool` and write `ToolFunction` and `get_schema` yourself. See [`examples/tools/tax_calculator.py`](examples/tools/tax_calculator.py).
 
@@ -226,6 +227,7 @@ print(model.MultiShotMessage("What can you do?"))
 | `src/cornilia/server.py` | The HTTP API |
 | `examples/tools/` | Example tools |
 | `examples/github_tools/` | Tools for reading and writing GitHub repositories, issues and pull requests. See its [README](examples/github_tools/README.md) |
+| `examples/web_tools/` | Tools for fetching web pages, extracting tables and building, downloading and cleaning datasets, made for small models. See its [README](examples/web_tools/README.md) |
 
 ## Contributing
 

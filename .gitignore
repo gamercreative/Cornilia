@@ -2,6 +2,9 @@
 configs.py
 .env
 
+# files written by examples/web_tools (CORNILIA_DATA_DIR)
+cornilia_data/
+
 # python
 __pycache__/
 *.egg-info/
