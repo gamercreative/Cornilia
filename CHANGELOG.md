@@ -4,6 +4,9 @@ Downstream projects pin a tagged release, so every change in behaviour gets a li
 
 ## Unreleased
 
+- Added `examples/web_tools`: tools to fetch web pages, read them in parts, extract HTML tables, build a dataset from
+  checked rows, download and clean data files, and get datasets from Hugging Face. Built for small models: the code does
+  the exact work and data goes to files under `CORNILIA_DATA_DIR`. Install with `pip install -e ".[web]"`.
 - `CORNILIA_TOOLS_DIR` / `TOOLS_DIR` takes several folders, joined with `os.pathsep` (`:` on macOS and Linux, `;` on
   Windows), or a list in `configs.py`. `LoadTools` accepts a list of folders too. A tool name defined in two folders stops
   with `DuplicateToolError` naming both files. A single folder works as before.
