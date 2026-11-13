@@ -272,6 +272,7 @@ class Fetched:
 # allow list, robots.txt and the polite delay. with to_file the body is streamed to that file instead of memory
 def _fetch(url:str, *, model_url:bool = True, max_bytes:int | None = None, to_file:Path | None = None,
            headers:dict | None = None) -> Fetched:
+    _need("httpx") # say what to install before anything is sent
     current = str(url).strip()
     headers = dict(headers or {})
     first_host = None
@@ -513,6 +514,7 @@ def _profile(df, path:Path, budget:int | None = None, extra:dict | None = None) 
 def fetch_page(url:Annotated[str, "The http or https link of the page"]) -> dict:
     """Downloads a web page, keeps only its main text and saves it. Returns the title, the first part of the text,
     the number of parts and how many HTML tables the page has."""
+    _need("trafilatura")
     meta, _ = _download_page(url)
     if not meta["chars"] and not meta["tables"]:
         raise ValueError("no readable text or tables on this page. It may need JavaScript to show its content, try another page")
