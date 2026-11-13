@@ -15,6 +15,8 @@ Downstream projects pin a tagged release, so every change in behaviour gets a li
 - Tool calls without an id get one, and arguments sent as an object instead of a JSON string are accepted.
 - A tool call cut off by the token limit now raises `MaxTokenError` with a hint, instead of running with broken arguments.
 - Added `CORNILIA_TIMEOUT` for the provider request timeout.
+- Added `github_triage_issues` to the GitHub example tools: one call checks many issues against a list of nested rules
+  and plans (or, when allowed, applies) labels, comments and closing.
 - Added a test suite (`pip install -e ".[dev]"`, then `pytest`).
 
 ## 0.1.0

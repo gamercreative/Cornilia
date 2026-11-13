@@ -26,7 +26,8 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Annotated, Literal
+from datetime import datetime, timezone
+from typing import Annotated, Literal, TypedDict
 
 from cornilia.tools import tool
 
@@ -317,3 +318,117 @@ def github_create_pull_request(repo:Repo,
     base = base or _api("GET", f"/repos/{repo}")["default_branch"]
     pr = _api("POST", f"/repos/{repo}/pulls", body={"title": title, "head": head, "base": base, "body": body, "draft": draft})
     return {"number": pr["number"], "url": pr["html_url"]}
+
+
+# ---------- multi-step: triage many issues with rules ----------
+# one call takes a list of rules, each a nested object, then lists the issues, matches every issue against
+# every rule and (only when asked and allowed) applies the actions. it reads by default, so it is safe to try,
+# and its nested arguments make it a good test of how well a model handles complex tool calls
+
+class IssueMatch(TypedDict, total=False):
+    """Conditions an issue must meet, all of the ones given. Leave a field out to ignore it."""
+    labels_any: Annotated[list[str], "The issue has at least one of these labels"]
+    labels_none: Annotated[list[str], "The issue has none of these labels"]
+    title_contains: Annotated[str, "Text the title contains, ignoring case"]
+    author: Annotated[str, "GitHub login of the issue's author"]
+    min_age_days: Annotated[int, "The issue was opened at least this many days ago"]
+    max_comments: Annotated[int, "The issue has at most this many comments"]
+
+class TriageAction(TypedDict, total=False):
+    """What to do with a matching issue. Leave a field out to skip it."""
+    add_labels: Annotated[list[str], "Labels to add"]
+    remove_labels: Annotated[list[str], "Labels to remove"]
+    comment: Annotated[str, "A comment to post"]
+    close: Annotated[bool, "Close the issue"]
+
+class TriageRule(TypedDict):
+    """One rule: a name, which issues it matches and what to do with them."""
+    name: Annotated[str, "A short name for the rule, shown in the result"]
+    match: IssueMatch
+    action: TriageAction
+
+def _days_old(item:dict) -> int:
+    opened = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+    return (datetime.now(timezone.utc) - opened).days
+
+def _matches(item:dict, match:IssueMatch) -> bool:
+    labels = {label["name"].lower() for label in item.get("labels", [])}
+    if match.get("labels_any") and not labels & {l.lower() for l in match["labels_any"]}:
+        return False
+    if match.get("labels_none") and labels & {l.lower() for l in match["labels_none"]}:
+        return False
+    if match.get("title_contains") and match["title_contains"].lower() not in item["title"].lower():
+        return False
+    if match.get("author") and (item.get("user") or {}).get("login", "").lower() != match["author"].lower():
+        return False
+    if match.get("min_age_days") is not None and _days_old(item) < match["min_age_days"]:
+        return False
+    if match.get("max_comments") is not None and item.get("comments", 0) > match["max_comments"]:
+        return False
+    return True
+
+def _apply(repo:str, number:int, labels:set[str], action:TriageAction):
+    new_labels = (labels | set(action.get("add_labels") or [])) - set(action.get("remove_labels") or [])
+    update = {}
+    if new_labels != labels:
+        update["labels"] = sorted(new_labels)
+    if action.get("close"):
+        update["state"] = "closed"
+    if action.get("comment"):
+        _api("POST", f"/repos/{repo}/issues/{number}/comments", body={"body": action["comment"]})
+    if update:
+        _api("PATCH", f"/repos/{repo}/issues/{number}", body=update)
+
+@tool
+def github_triage_issues(repo:Repo,
+                         rules:Annotated[list[TriageRule], "Rules checked in order. An issue can match several rules, their actions are combined"],
+                         state:Literal["open", "closed", "all"] = "open",
+                         include_pull_requests:Annotated[bool, "Also check pull requests, they are left out by default"] = False,
+                         limit:Annotated[int, "How many of the newest issues to check, at most 200"] = 50,
+                         apply:Annotated[bool, "Carry out the actions. Leave false to only get the plan, which changes nothing"] = False) -> dict:
+    """Triages the issues of a GitHub repository with rules: finds the issues each rule matches and plans (or applies) its actions."""
+    repo = _check_repo(repo)
+    if not rules:
+        raise ValueError("give at least one rule")
+    if apply:
+        _check_write()
+
+    limit = min(max(limit, 1), 200)
+    items, page = [], 1
+    while len(items) < limit:
+        batch = _api("GET", f"/repos/{repo}/issues", {"state": state, "per_page": 100, "page": page, "sort": "created", "direction": "desc"})
+        items += [item for item in batch if include_pull_requests or "pull_request" not in item]
+        if len(batch) < 100:
+            break
+        page += 1
+    items = items[:limit]
+
+    plan = []
+    for item in items:
+        matched = [rule for rule in rules if _matches(item, rule.get("match") or {})]
+        if not matched:
+            continue
+        combined:TriageAction = {"add_labels": [], "remove_labels": [], "comment": "", "close": False}
+        for rule in matched:
+            action = rule.get("action") or {}
+            combined["add_labels"] += [l for l in action.get("add_labels") or [] if l not in combined["add_labels"]]
+            combined["remove_labels"] += [l for l in action.get("remove_labels") or [] if l not in combined["remove_labels"]]
+            combined["comment"] = "\n\n".join(c for c in (combined["comment"], action.get("comment") or "") if c)
+            combined["close"] = combined["close"] or bool(action.get("close"))
+        plan.append({
+            "number": item["number"],
+            "title": item["title"],
+            "rules": [rule["name"] for rule in matched],
+            "actions": {key: value for key, value in combined.items() if value},
+        })
+        if apply:
+            _apply(repo, item["number"], {label["name"] for label in item.get("labels", [])}, combined)
+
+    return {
+        "repo": repo,
+        "checked": len(items),
+        "matched": len(plan),
+        "per_rule": {rule["name"]: sum(rule["name"] in entry["rules"] for entry in plan) for rule in rules},
+        "applied": apply,
+        "plan": plan,
+    }
