@@ -250,3 +250,53 @@ def test_every_tool_loads_with_a_short_schema():
     for item in tools.values():
         schema = item.get_schema()["function"]
         assert len(schema["description"]) < 250, schema["name"]
+
+
+@pytest.mark.parametrize("file_name, content_type", [("rain.parquet", "application/octet-stream"),
+                                                     ("rain.xlsx", "application/octet-stream"),
+                                                     ("rain.jsonl", "application/octet-stream"),
+                                                     ("rain", "application/json")])
+def test_download_dataset_detects_the_format(web, tmp_path, file_name, content_type):
+    pytest.importorskip("openpyxl")
+    import pandas as pd
+    df = pd.DataFrame({"city": ["Beirut", "Zahle"], "rain": [825, 600]})
+    source = tmp_path / "source"
+    if file_name.endswith(".parquet"):
+        df.to_parquet(source)
+    elif file_name.endswith(".xlsx"):
+        df.to_excel(source, index=False)
+    elif file_name.endswith(".jsonl"):
+        df.to_json(source, orient="records", lines=True)
+    else: # a json api answer with the rows inside an object
+        source.write_text(json.dumps({"count": 2, "data": df.to_dict(orient="records")}))
+    serve(web, f"https://data.example/{file_name}", body=source.read_bytes(), content_type=content_type)
+    profile = web.download_dataset(f"https://data.example/{file_name}", "rain")
+    assert profile["rows"] == 2 and profile["columns"] == {"city": "text", "rain": "integer"}
+
+
+def test_hf_get_dataset_uses_the_parquet_export_for_many_rows(web, tmp_path, monkeypatch):
+    import pandas as pd
+    monkeypatch.setenv("HF_TOKEN", "secret")
+    server = web.DATASETS_SERVER
+    splits = {"splits": [{"dataset": "me/rain", "config": "default", "split": "train"}]}
+    serve(web, f"{server}/splits?dataset=me/rain", body=json.dumps(splits).encode(), content_type="application/json")
+    file_url = "https://huggingface.co/api/datasets/me/rain/parquet/default/train/0.parquet"
+    listing = {"parquet_files": [{"config": "default", "split": "train", "url": file_url, "size": 100}]}
+    serve(web, f"{server}/parquet?dataset=me%2Frain&config=default&split=train", body=json.dumps(listing).encode(),
+          content_type="application/json")
+    pd.DataFrame({"hour": range(5000), "rain": [0.5] * 5000}).to_parquet(tmp_path / "rain.parquet")
+    web.served[file_url] = (302, {"location": "https://cdn.example/rain.parquet"}, b"")
+    serve(web, "https://cdn.example/rain.parquet", body=(tmp_path / "rain.parquet").read_bytes(), content_type="application/octet-stream")
+
+    seen_headers = {}
+    fake_request = web._request
+    def recording_request(url, headers, max_bytes, out):
+        seen_headers[url] = dict(headers)
+        return fake_request(url, headers, max_bytes, out)
+    monkeypatch.setattr(web, "_request", recording_request)
+
+    profile = web.hf_get_dataset("me/rain", max_rows=3000)
+    assert profile["rows"] == 3000 and profile["path"].endswith(".parquet")
+    assert seen_headers[file_url]["Authorization"] == "Bearer secret"
+    assert "Authorization" not in seen_headers["https://cdn.example/rain.parquet"] # the token stays with Hugging Face
+    assert list(web._data_dir().glob("*.download")) == []
