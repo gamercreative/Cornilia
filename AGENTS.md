@@ -115,8 +115,15 @@ and only at the scale the change needs:
 
 - **Never during a live event, workshop or demo.** It loads the machine and gets in the
   way of the work. Skip it, and run it later if it's still needed.
+- **Keep every run, labelled by version.** Each run gets its own folder,
+  `examples/benchmark/results/<date>_<model-tag>_cornilia-<version>-<commit>/`, with a
+  `REPORT.md`, a `run.json` recording the exact Cornilia version and commit, model tag,
+  quantization, runtime version, hardware and settings, and the raw per-task results when
+  they exist. Add a row for it to `examples/benchmark/RESULTS.md`. Never overwrite an
+  older run.
 - **Report what you ran.** Put the model, the hardware and the pass rates in the pull
-  request, and compare them with the latest run in `examples/benchmark/RESULTS.md`.
+  request, and compare them with the latest comparable run in
+  `examples/benchmark/RESULTS.md`.
 - **Never make up numbers.** If no model is available, say so in the pull request.
 
 ## Working rules
