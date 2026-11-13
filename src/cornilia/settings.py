@@ -34,6 +34,14 @@ def ProjectPath(path:str | None) -> Path | None:
         return None
     return Path(path).expanduser()
 
+# TOOLS_DIR as a list of folders. it can be one folder, several joined with os.pathsep, or a list
+def ToolsFolders(value:str | Path | list | None) -> list[Path]:
+    if not value:
+        return []
+    if isinstance(value, (str, Path)):
+        value = str(value).split(os.pathsep)
+    return [ProjectPath(str(folder).strip()) for folder in value if str(folder).strip()]
+
 # an integer setting from the environment, empty means the default
 def EnvInt(name:str, default:int) -> int:
     raw = os.environ.get(name, "").strip()
@@ -76,6 +84,8 @@ SYSTEM_PROMPT_FILE = os.environ.get("CORNILIA_SYSTEM_PROMPT_FILE")
 
 # folder of tool modules to load, every Tool defined at the top of a .py file in it is registered
 # none by default, try the examples with CORNILIA_TOOLS_DIR=examples/tools
+# several folders are separated by os.pathsep, ":" on macOS and Linux and ";" on Windows, for example
+# CORNILIA_TOOLS_DIR=examples/web_tools:examples/github_tools. in configs.py it can also be a list of folders
 TOOLS_DIR = os.environ.get("CORNILIA_TOOLS_DIR")
 
 # agent loop limits

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any, Callable, Literal, Union
 
 from .system import *
+from .errors import DuplicateToolError
 
 # this is the interface for tool classes
 class Tool(ABC):
@@ -180,7 +181,7 @@ def BuildToolRegistry(tool_list:list[Tool]) -> dict[str, Tool]:
 
 # imports every .py file in a folder and collects the Tool objects defined at the top of each module
 # a module that fails to import is skipped with a warning instead of crashing the agent
-def LoadTools(folder:str | Path) -> dict[str, Tool]:
+def LoadToolFolder(folder:str | Path) -> dict[str, Tool]:
     folder = Path(folder)
     if not folder.is_dir():
         print(f"{SystemResponseTypes.SystemWarning}: tools folder {folder} does not exist, running without tools")
@@ -191,6 +192,10 @@ def LoadTools(folder:str | Path) -> dict[str, Tool]:
         if path.name.startswith("_"):
             continue
         module_name = f"cornilia_tools_{path.stem}"
+        # a file with the same name in another tools folder gets its own module, so neither replaces the other
+        loaded = sys.modules.get(module_name)
+        if loaded is not None and Path(getattr(loaded, "__file__", "") or "").resolve() != path.resolve():
+            module_name = f"cornilia_tools_{path.parent.name}_{path.stem}"
         try:
             spec = importlib.util.spec_from_file_location(module_name, path)
             module = importlib.util.module_from_spec(spec) # type: ignore
@@ -212,3 +217,29 @@ def LoadTools(folder:str | Path) -> dict[str, Tool]:
                 found.append(value)
 
     return BuildToolRegistry(found)
+
+# the file a tool was defined in, used to name both files when two folders define the same tool
+def ToolSource(item:Tool) -> str:
+    try:
+        return inspect.getfile(item.function if isinstance(item, FunctionTool) else type(item))
+    except TypeError:
+        return "an unknown file"
+
+# loads tools from one folder or a list of folders, in order.
+# within one folder a duplicate name is skipped with a warning, as before.
+# across folders a duplicate name is an error, so a tool is never replaced without you knowing
+def LoadTools(folders:str | Path | list[str | Path]) -> dict[str, Tool]:
+    if isinstance(folders, (str, Path)):
+        return LoadToolFolder(folders)
+
+    registry = {}
+    seen = set()
+    for folder in folders:
+        if Path(folder).resolve() in seen: # the same folder listed twice is loaded once
+            continue
+        seen.add(Path(folder).resolve())
+        for name, item in LoadToolFolder(folder).items():
+            if name in registry:
+                raise DuplicateToolError(name, ToolSource(registry[name]), ToolSource(item))
+            registry[name] = item
+    return registry

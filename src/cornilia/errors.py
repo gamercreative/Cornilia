@@ -13,6 +13,15 @@ class MaxTokenError(HarnessBaseError):
         super().__init__(f"the reply passed the max token limit of {max_tokens} in the middle of a tool call, raise max_tokens (CORNILIA_MAX_TOKENS)")
         self.max_tokens = max_tokens
         
+# raised when two tools folders define a tool with the same name
+class DuplicateToolError(HarnessBaseError):
+    def __init__(self, tool_name:str, first_file:str, second_file:str):
+        super().__init__(f"two tools are named {tool_name}: one in {first_file} and one in {second_file}. "
+                         f"Rename one of them, or load only one of the folders")
+        self.tool_name = tool_name
+        self.first_file = first_file
+        self.second_file = second_file
+
 class ToolCallError(HarnessBaseError):
     def __init__(self, message:str, tool_name:str,  exit_code:int):
         super().__init__(f"Tool {tool_name} returned an error code of {exit_code}. Error: {message}")
