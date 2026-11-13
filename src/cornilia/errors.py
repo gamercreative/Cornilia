@@ -10,7 +10,7 @@ class SchemaParserError(HarnessBaseError):
         
 class MaxTokenError(HarnessBaseError):
     def __init__(self, max_tokens:int):
-        super().__init__(f"surpassed max token length of {max_tokens}")
+        super().__init__(f"the reply passed the max token limit of {max_tokens} in the middle of a tool call, raise max_tokens (CORNILIA_MAX_TOKENS)")
         self.max_tokens = max_tokens
         
 class ToolCallError(HarnessBaseError):

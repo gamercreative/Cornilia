@@ -36,7 +36,10 @@ class OpenAIModel():
         try:
             if tool_name not in self.tools:
                 raise HarnessBaseError(f"no tool named {tool_name}, available tools: {list(self.tools)}")
-            tool_args = json.loads(tool_args or "{}")
+            # the api sends arguments as a json string, a few servers send the object itself
+            tool_args = tool_args if isinstance(tool_args, dict) else json.loads(tool_args or "{}")
+            if not isinstance(tool_args, dict):
+                raise HarnessBaseError(f"arguments must be a json object, got {tool_args!r}")
             result = json.dumps(self.tools[tool_name].ToolFunction(**tool_args), default=str) # dates, decimals, paths etc are sent as text
 
         except Exception as e:
@@ -91,10 +94,18 @@ class OpenAIModel():
             response_finish_reason = response.finish_reason
 
             # decide on tool calls from the message itself, not every server sets finish_reason to tool_calls
+            # a tool call cut off by the token limit has broken arguments, so stop with a clear error instead of running it
+            if message.tool_calls and response_finish_reason == OpenAIFinishReason.LENGTH:
+                raise MaxTokenError(self.response_configs.get("max_tokens") or self.response_configs.get("max_completion_tokens") or 0)
+
             if message.tool_calls:
                 # out of steps, don't run tools whose results the model would never see
                 if steps >= self.max_steps:
                     raise MaxStepsError(self.max_steps)
+                # every result must name the call it answers, some local servers leave the id out
+                for index, tool_call in enumerate(message.tool_calls):
+                    if not tool_call.id:
+                        tool_call.id = f"call_{steps}_{index}"
                 self.context_manager.AppendToolCallMessage(message)
 
                 for tool_call in message.tool_calls:

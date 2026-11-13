@@ -42,6 +42,7 @@ The token is only read from the environment and never written anywhere.
 | `github_get_issue` | One issue or pull request conversation with its comments | |
 | `github_list_pull_requests` | Pull requests, by state | |
 | `github_get_pull_request` | One pull request with the files it changes | |
+| `github_triage_issues` | Checks many issues against a list of rules and plans, or applies, labels, comments and closing | only with `apply` |
 | `github_create_issue` | Opens an issue | yes |
 | `github_comment` | Comments on an issue or pull request | yes |
 | `github_update_issue` | Changes title, text, labels or open/closed state | yes |
@@ -50,3 +51,22 @@ The token is only read from the environment and never written anywhere.
 | `github_create_pull_request` | Opens a pull request | yes |
 
 A typical change made by the model is `github_create_branch`, then `github_write_file` for each file, then `github_create_pull_request`. There is no merge or delete tool on purpose, so a person always reviews and merges.
+
+## Triage with rules
+
+`github_triage_issues` does in one call what would otherwise take many: it lists the newest issues, checks each one against a list of rules, and returns a plan of what each rule would do. Each rule is a nested object with a `match` (labels, title text, author, age, comment count) and an `action` (labels to add or remove, a comment, closing). It only reads unless the model passes `apply: true`, and applying also needs `GITHUB_TOOLS_ALLOW_WRITE=1`.
+
+Try it with a request such as "In octocat/Hello-World, plan this triage: issues with no labels and at least 30 days old get the label stale, and issues whose title mentions crash get the label bug. Don't change anything."
+
+Its arguments look like this, which makes it a good test of how well a model handles nested tool arguments:
+
+```json
+{
+  "repo": "octocat/Hello-World",
+  "rules": [
+    {"name": "stale", "match": {"labels_none": ["bug", "enhancement"], "min_age_days": 30}, "action": {"add_labels": ["stale"]}},
+    {"name": "crash", "match": {"title_contains": "crash"}, "action": {"add_labels": ["bug"]}}
+  ],
+  "limit": 50
+}
+```

@@ -158,7 +158,7 @@ def create_conversation(body:OneShotRequest):
     return OneShotResponse(model_name=model.model_name, status=status, response=response)
 
 
-# lets you run the server with `python server.py`
+# lets you run the server with `python -m cornilia.server`
 if __name__ == "__main__":
     import uvicorn
 
