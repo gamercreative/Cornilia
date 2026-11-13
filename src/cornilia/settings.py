@@ -57,6 +57,8 @@ PROVIDER_CONFIGS = ProviderConfigs(
     name = PROVIDER_NAME,
     base_url = os.environ.get("CORNILIA_BASE_URL", _preset["base_url"]),
     api_key = os.environ.get("CORNILIA_API_KEY", _preset["api_key"]),
+    # seconds before a request gives up. large local models can need more than the default for a long reply
+    timeout = EnvInt("CORNILIA_TIMEOUT", 120),
 )
 
 # the model to talk to

@@ -1,5 +1,6 @@
 import importlib.util
 import inspect
+import json
 import sys
 import types
 import typing
@@ -53,10 +54,56 @@ def TypeToSchema(hint) -> dict:
     if origin is dict:
         return {"type": "object"}
 
+    # a TypedDict describes a nested object, so the model sees its field names, types and which ones are required
+    if typing.is_typeddict(hint):
+        fields = typing.get_type_hints(hint, include_extras=True)
+        required = [name for name in fields if name in hint.__required_keys__]
+        schema = {"type": "object", "properties": {name: TypeToSchema(field) for name, field in fields.items()}}
+        if required:
+            schema["required"] = required
+        if hint.__doc__ and not hint.__doc__.startswith(hint.__name__ + "("): # skip the docstring python writes itself
+            schema["description"] = inspect.cleandoc(hint.__doc__)
+        return schema
+
     if hint in JSON_TYPES:
         return {"type": JSON_TYPES[hint]}
 
     return {} # unknown types accept anything
+
+# the type a hint stands for once Annotated and Optional are taken off, and whether it allows None
+def BaseType(hint) -> tuple[Any, bool]:
+    if typing.get_origin(hint) is Annotated:
+        hint = typing.get_args(hint)[0]
+    if typing.get_origin(hint) in (Union, types.UnionType):
+        options = [arg for arg in typing.get_args(hint) if arg is not type(None)]
+        allows_none = len(options) < len(typing.get_args(hint))
+        return (options[0] if len(options) == 1 else hint), allows_none
+    return hint, hint is Any
+
+# smaller models often send "10" for a number, "true" for a flag or a list written as a json string.
+# when the type hint makes the meaning clear the value is converted, anything else is passed on as it came
+def CoerceValue(value, hint):
+    base, _ = BaseType(hint)
+    origin = typing.get_origin(base) or base
+    if not isinstance(value, str):
+        if base is float and isinstance(value, int) and not isinstance(value, bool):
+            return float(value)
+        return value
+    text = value.strip()
+    try:
+        if base is bool and text.lower() in ("true", "false"):
+            return text.lower() == "true"
+        if base is int:
+            return int(text)
+        if base is float:
+            return float(text)
+        if origin in (list, tuple, set) and text.startswith("["):
+            return json.loads(text)
+        if (origin is dict or typing.is_typeddict(base)) and text.startswith("{"):
+            return json.loads(text)
+    except ValueError: # not what the hint asks for, the tool's own error will tell the model
+        pass
+    return value
 
 # a tool built from a plain function: its name, docstring and type hints become the schema
 class FunctionTool(Tool):
@@ -66,7 +113,24 @@ class FunctionTool(Tool):
         super().__init__(name=name or function.__name__, context=context or docstring.split("\n\n")[0].strip())
 
     def ToolFunction(self, *args, **kwargs) -> Any:
-        return self.function(*args, **kwargs)
+        return self.function(*args, **self.PrepareArguments(kwargs))
+
+    # makes the model's arguments fit the function: values are converted to the hinted type where that is clear,
+    # and a null sent for an optional argument whose default is not None means "use the default"
+    def PrepareArguments(self, arguments:dict) -> dict:
+        hints = typing.get_type_hints(self.function, include_extras=True)
+        parameters = inspect.signature(self.function).parameters
+        prepared = {}
+        for name, value in arguments.items():
+            parameter = parameters.get(name)
+            if parameter is None: # unknown names are passed on, so the error tells the model what it got wrong
+                prepared[name] = value
+                continue
+            hint = hints.get(name, Any)
+            if value is None and parameter.default is not parameter.empty and not BaseType(hint)[1]:
+                continue
+            prepared[name] = CoerceValue(value, hint)
+        return prepared
 
     # calling the tool directly runs the original function, handy for testing it
     def __call__(self, *args, **kwargs) -> Any:

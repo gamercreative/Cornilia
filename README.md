@@ -6,13 +6,15 @@ It talks to models through the OpenAI-compatible chat completions API, so the sa
 
 ## Install
 
-Python 3.10 or newer.
+Python 3.10 or newer. On macOS the built-in `python3` is 3.9, so create the virtual environment with a newer one, for example `python3.12 -m venv .venv` from Homebrew or python.org.
 
 ```bash
 git clone https://github.com/gamercreative/Cornilia.git
 cd Cornilia
+python3.12 -m venv .venv && source .venv/bin/activate   # on Windows: .venv\Scripts\activate
 pip install -e .            # the agent loop
 pip install -e ".[server]"  # also the HTTP server
+pip install -e ".[dev]"     # also the tests, run them with pytest
 ```
 
 To use Cornilia in another project, install a tagged release instead of following `main`:
@@ -33,7 +35,8 @@ Every setting has a default in [`settings.py`](src/cornilia/settings.py). Change
 | `CORNILIA_MODEL` | `qwen3.5:9b` for `ollama`, none for `openai` | Model name |
 | `CORNILIA_BASE_URL` | from the preset | Any other OpenAI-compatible server |
 | `CORNILIA_API_KEY` | from the preset (`OPENAI_API_KEY` for `openai`) | API key |
-| `CORNILIA_MAX_TOKENS` | `512` for `ollama` | Max tokens per reply. A longer reply is continued automatically |
+| `CORNILIA_MAX_TOKENS` | `512` for `ollama` | Max tokens per reply. A longer reply is continued automatically, but a tool call cut off by the limit stops the turn with an error, so raise it for tools with large arguments |
+| `CORNILIA_TIMEOUT` | `120` | Seconds before a request to the provider gives up. Raise it for large local models. In `configs.py` it is `timeout=` in `ProviderConfigs` |
 | `CORNILIA_SYSTEM_PROMPT` / `CORNILIA_SYSTEM_PROMPT_FILE` | none | System prompt for every new conversation |
 | `CORNILIA_TOOLS_DIR` | none | Folder of tool modules to load. Try `examples/tools` |
 | `CORNILIA_MAX_STEPS` | `10` | Model responses allowed per turn, counting tool rounds |
@@ -42,6 +45,8 @@ Every setting has a default in [`settings.py`](src/cornilia/settings.py). Change
 | `CORNILIA_TRACE` | off | Set to `1` to print every tool call, its arguments, result and time |
 
 Local model with Ollama:
+
+Install [Ollama](https://ollama.com) and keep it running (the app, or `ollama serve`), then:
 
 ```bash
 ollama pull qwen3.5:9b
@@ -177,6 +182,10 @@ def count_words(text: Annotated[str, "The text to count the words of"]) -> dict:
 ```
 
 Parameters without a default are required. `Literal[...]` becomes an enum, and `list[str]`, `int | None` and similar hints work as you would expect.
+
+For a nested object, describe it with a `TypedDict`: the model sees each field with its type, and fields of a `total=False` TypedDict are optional. A `list[YourTypedDict]` is a list of such objects. The values reach your function as plain dicts.
+
+Smaller models often send `"10"` for a number, `"true"` for a flag or a list written as a JSON string. When the type hint makes the meaning clear, Cornilia converts the value before calling your function, and a `null` for an argument that has a default means "use the default".
 
 For a larger example, [`examples/github_tools`](examples/github_tools/README.md) gives a model read and write access to GitHub repositories, issues and pull requests, with writing off until you turn it on.
 
