@@ -4,6 +4,10 @@ Downstream projects pin a tagged release, so every change in behaviour gets a li
 
 ## Unreleased
 
+- Added `examples/benchmark`: a model benchmark that runs through Cornilia's own agent loop with deterministic fake
+  tools and deterministic scoring (tool call validity, arguments, answers, hidden asserts for code). Quick and full
+  suites, optional thinking comparison, and one results folder per run named after the date, model and Cornilia
+  version. Includes the 2026-11-13 reference run of qwen3.5:35b-a3b. No change to the core.
 - Added a planner/executor team (`cornilia.orchestration.PlannerExecutor`): a planner model thinks and gives
   instructions, an executor model carries them out with the tools. Turn it on in the terminal chat with
   `CORNILIA_PLANNER_MODEL`, and change or swap the two models while it runs with `/planner`, `/executor` and `/swap`.
