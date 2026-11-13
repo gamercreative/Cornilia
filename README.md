@@ -226,6 +226,7 @@ print(model.MultiShotMessage("What can you do?"))
 | `src/cornilia/server.py` | The HTTP API |
 | `examples/tools/` | Example tools |
 | `examples/github_tools/` | Tools for reading and writing GitHub repositories, issues and pull requests. See its [README](examples/github_tools/README.md) |
+| `examples/benchmark/` | A benchmark for the configured model through Cornilia's agent loop, with past results. See its [README](examples/benchmark/README.md) |
 
 ## Contributing
 

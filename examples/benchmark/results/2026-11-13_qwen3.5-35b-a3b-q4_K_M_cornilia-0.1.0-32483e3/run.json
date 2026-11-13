@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-13",
+  "cornilia": {
+    "version": "0.1.0",
+    "commit": "32483e3",
+    "branch": "claude/project-thread-or8a7s"
+  },
+  "model": {
+    "name": "qwen3.5:35b-a3b",
+    "tag": "qwen3.5-35b-a3b-q4_K_M",
+    "parameters": "about 36B",
+    "active_parameters": "about 3B",
+    "quantization": "Q4_K_M",
+    "ollama_digest": null
+  },
+  "runtime": {
+    "name": "ollama",
+    "version": "0.40.16",
+    "api_base": "http://localhost:11434/v1"
+  },
+  "hardware": {"system": "macOS", "machine": "arm64", "model": "MacBook Pro (M1 Pro)", "cpu": "Apple M1 Pro", "memory_gb": 32},
+  "context_length": 32768,
+  "sampling": {
+    "source": "modelfile defaults",
+    "temperature": 1,
+    "top_k": 20,
+    "top_p": 0.95,
+    "presence_penalty": 1.5
+  },
+  "settings": {
+    "max_tokens": 2048,
+    "max_tokens_github_tasks": 4096,
+    "max_tokens_thinking": 8192,
+    "thinking": "off, and on for the coding and reasoning comparison",
+    "reasoning_effort": "none",
+    "max_steps": 12,
+    "retries": 0,
+    "timeout": 600
+  },
+  "script": "an earlier benchmark script that is not in the repository, so there is no tasks.jsonl",
+  "pull_request": 26,
+  "tasks": 123,
+  "duration_s": 1920,
+  "totals": {
+    "calls_valid": 144,
+    "calls_total": 144,
+    "leaked_tool_calls": 0,
+    "args_ok": 60,
+    "args_checked": 61,
+    "tool_tasks": {"passed": 58, "runs": 61},
+    "stability": {"passed": 32, "runs": 35, "tasks": 7, "repeats": 5},
+    "categories": {
+      "simple": {"passed": 10, "runs": 10, "median_latency_s": 3.3},
+      "chain": {"passed": 8, "runs": 8, "median_latency_s": 6.0, "max_latency_s": 15.2, "calls_per_task": 3.8},
+      "nested_github": {"passed": 8, "runs": 8, "median_latency_s": 8.7},
+      "json": {"passed": 12, "runs": 12, "response_format": "6/6", "prompt_only": "6/6", "median_latency_s": 2.5},
+      "coding": {"passed": 6, "runs": 6, "median_latency_s": 5.7},
+      "coding+thinking": {"passed": 6, "runs": 6, "median_latency_s": 47.7, "max_latency_s": 256},
+      "reasoning": {"passed": 6, "runs": 8, "median_latency_s": 5.9},
+      "reasoning+thinking": {"passed": 8, "runs": 8, "median_latency_s": 34.7, "max_latency_s": 110},
+      "long_context": {"passed": 12, "runs": 12, "max_tokens_in_prompt": "about 24k"}
+    },
+    "speed": {
+      "ttft_s": 0.4,
+      "tokens_per_s": 40,
+      "tokens_per_s_in_agent_loop": "18-25",
+      "prefill_tokens_per_s": 350,
+      "prefill_24k_s": 70,
+      "two_concurrent_requests_s": [5.3, 10.7]
+    },
+    "memory": {"used_gb": 31, "wired_gb": 25, "swap_gb_before": 3.0, "swap_gb_after": 8.7}
+  }
+}
