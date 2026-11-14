@@ -4,6 +4,8 @@ Downstream projects pin a tagged release, so every change in behaviour gets a li
 
 ## Unreleased
 
+- Fixed: a `Retry-After: nan` header from a provider made the retry wait NaN seconds, which raises `ValueError`
+  in `time.sleep`. It now falls back to the normal backoff.
 - Added `examples/benchmark`: a model benchmark that runs through Cornilia's own agent loop with deterministic fake
   tools and deterministic scoring (tool call validity, arguments, answers, hidden asserts for code). Quick and full
   suites, optional thinking comparison, and one results folder per run named after the date, model and Cornilia
