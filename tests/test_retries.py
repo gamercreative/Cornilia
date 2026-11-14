@@ -2,7 +2,10 @@
 # the provider is scripted and time.sleep is replaced, so no server is needed and no test waits for real
 import math
 
-import httpx2 as httpx # the venv's openai (3.x) builds its errors on httpx2, not httpx
+try:
+    import httpx2 as httpx # openai 3.x builds its errors on httpx2
+except ImportError:
+    import httpx # older openai releases (still allowed by pyproject) use httpx
 import openai
 import pytest
 from openai.types.chat import ChatCompletion
