@@ -62,6 +62,8 @@ class OpenAIModel():
             wait = float(retry_after)
         except (TypeError, ValueError): # missing, or a date instead of seconds
             wait = 2 ** attempt
+        if wait != wait: # "nan" parses as a float, and time.sleep(nan) raises ValueError
+            wait = 2 ** attempt
         return min(max(wait, 0), self.retry_max_wait)
 
     # sends the current history to the provider, retrying a bounded number of times on errors that can pass
